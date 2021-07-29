@@ -15,11 +15,69 @@ const { exec } = require('child_process')
 
 // templete list
 const templates = {
-    basic: {
+    default: {
         url: "https://github.com/vihasshah/react-native-template.git",
         downloadUrl: "https://github.com:vihasshah/react-native-template#master",
         description: "Basic React Native Project"
     }
+}
+
+const getOptions = (projectName) => [
+    {
+        type: 'list',
+        name: 'appType',
+        message: 'Please select application type',
+        choices: ['default', 'marketplace'],
+        default: 'default'
+    },
+    {
+        type: 'inpute',
+        name: 'name',
+        message: 'Please enter the project name',
+        default: projectName
+    },
+    {
+        type: 'inpute',
+        name: 'appId',
+        message: "Please enter Bundle Identifier / Application ID",
+        default: `com.${projectName.toLowerCase()}`
+    },
+    {
+        type: 'inpute',
+        name: 'description',
+        message: 'Please enter a project description',
+        default: ''
+    },
+    {
+        type: 'inpute',
+        name: 'author',
+        message: "Please enter the author's name",
+        default: ''
+    }
+]
+
+/**
+ * show spinner log 
+ * download repo
+ */
+const downloadRepo = (projectName, downloadUrl, answers) => {
+    const { appId, ...restAnswers } = answers
+    const spinner = ora('Downloading template...').start()
+    download(downloadUrl, projectName, { clone: true }, (err) => {
+        if (err) {
+            spinner.fail()
+            console.log(logSymbols.error, chalk.red(err))
+        } else {
+            spinner.succeed()
+            const packagePath = `${projectName}/package.json`
+            const packageContent = fs.readFileSync(packagePath, 'utf8')
+            const packageResult = handlebars.compile(packageContent)(restAnswers);
+            fs.writeFileSync(packagePath, packageResult)
+            console.log(logSymbols.success, chalk.green('Success to initialize template'))
+            // ask options to user
+            renamePackage(projectName, appId)
+        }
+    })
 }
 
 
@@ -101,65 +159,35 @@ const removeProject = (projectName) => {
 //////////////////////////////
 
 
-program.version('0.0.1')
+program.version('1.0.0')
 
+/**
+ * init command handle 
+ * based onthis options will be asked and 
+ * based on app type respective repo will be downloaded
+ */
 program
-    .command('init <template> <project>')
+    .command('init <project>')
     .description('Initializing project templete')
-    .action((templateName, projectName) => {
-        const { downloadUrl } = templates[templateName]
-        const spinner = ora('Downloading template...').start()
-        download(downloadUrl, projectName, { clone: true }, (err) => {
-            if (err) {
-                spinner.fail()
-                console.log(logSymbols.error, chalk.red(err))
-                return
+    .action((projectName) => {
+        inquirer.prompt(getOptions(projectName)).then((answers) => {
+            const { appType } = answers
+            if (appType === 'marketplace') {
+                console.log(chalk.magentaBright("Oops! Currently this type is not supported :)"))
             } else {
-                spinner.succeed()
-                // ask options to user
-                inquirer.prompt([
-                    {
-                        type: 'inpute',
-                        name: 'name',
-                        message: 'Please enter the project name',
-                        default: projectName
-                    },
-                    {
-                        type: 'inpute',
-                        name: 'appId',
-                        message: "Please enter Bundle Identifier / Application ID"
-                    },
-                    {
-                        type: 'inpute',
-                        name: 'description',
-                        message: 'Please enter a project description',
-                        default: ''
-                    },
-                    {
-                        type: 'inpute',
-                        name: 'author',
-                        message: "Please enter the author's name",
-                        default: ''
-                    }
-                ]).then((answers) => {
-                    const { appId, ...restAnswers } = answers
-                    const packagePath = `${projectName}/package.json`
-                    const packageContent = fs.readFileSync(packagePath, 'utf8')
-                    const packageResult = handlebars.compile(packageContent)({ name: projectName, ...restAnswers });
-                    fs.writeFileSync(packagePath, packageResult)
-                    console.log(logSymbols.success, chalk.green('Success to initialize template'))
-                    renamePackage(projectName, appId)
-                })
+                const { downloadUrl } = templates[appType]
+                downloadRepo(projectName, downloadUrl, answers)
             }
         })
+
     })
 
 program
     .command('list')
     .description('View list of available templates')
     .action(() => {
-        console.log(process.platform, os.platform())
-        console.log("basic - React Native basic templete")
+        console.log("default - React Native basic templete")
+        console.log("marketplace - React Native marketplace templete (Coming Soon)")
     })
 
 program.parse(process.argv)
