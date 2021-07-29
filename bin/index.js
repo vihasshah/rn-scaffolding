@@ -120,18 +120,26 @@ program
                 inquirer.prompt([
                     {
                         type: 'inpute',
+                        name: 'name',
+                        message: 'Please enter the project name',
+                        default: projectName
+                    },
+                    {
+                        type: 'inpute',
                         name: 'appId',
                         message: "Please enter Bundle Identifier / Application ID"
                     },
                     {
                         type: 'inpute',
                         name: 'description',
-                        message: 'Please enter a project description'
+                        message: 'Please enter a project description',
+                        default: ''
                     },
                     {
                         type: 'inpute',
                         name: 'author',
-                        message: "Please enter the author's name"
+                        message: "Please enter the author's name",
+                        default: ''
                     }
                 ]).then((answers) => {
                     const { appId, ...restAnswers } = answers
