@@ -17,7 +17,7 @@ const { exec } = require('child_process')
 const templates = {
     default: {
         url: "https://github.com/vihasshah/react-native-template.git",
-        downloadUrl: "https://github.com:vihasshah/react-native-template#master",
+        downloadUrl: "https://github.com/vihasshah/react-native-template.git",
         description: "Basic React Native Project"
     }
 }
